@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{0} - %msg%n</pattern>
+            <!--
+                Кодировка консоли, в которую пишет JVM (stdout.encoding задаётся самой JVM,
+                например cp866 в русской консоли Windows). Без этого русский текст
+                превращается в «кракозябры»; при перенаправлении в файл берётся UTF-8.
+            -->
+            <charset>${stdout.encoding:-UTF-8}</charset>
+        </encoder>
+    </appender>
+
+    <!-- Уровень DEBUG включается ключом командной строки verbose, см. org.example.common.Logging. -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>

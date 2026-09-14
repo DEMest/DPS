@@ -1,0 +1,87 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+    implementation 'org.slf4j:slf4j-api:2.0.16'
+    // Реализация SLF4J: настройка формата и уровня — в src/main/resources/logback.xml
+    implementation 'ch.qos.logback:logback-classic:1.5.12'
+
+    // Lombok: генерация конструкторов и полей-логгеров на этапе компиляции.
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+    testCompileOnly 'org.projectlombok:lombok:1.18.34'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Проекту нужен JDK 21: используются виртуальные нити (Thread.ofVirtual) в клиенте
+// и тестах. Если Gradle запущен на более старой JVM, сборка упадёт с понятным
+// сообщением о ненайденном toolchain, а не собранный jar — с UnsupportedClassVersionError.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+
+application {
+    mainClass = 'org.example.Main'
+}
+
+// Обычный jar содержит только классы проекта: запускать его нужно с указанием
+// classpath (см. задачу installDist или fatJar ниже).
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.example.Main'
+    }
+}
+
+/*
+ * Самодостаточный jar со всеми зависимостями (BouncyCastle) внутри.
+ * Именно его удобно запускать вручную:
+ *   java -jar build/libs/J1-all.jar server --ca-key ca.key --ca-cert ca.crt --port 9000
+ */
+tasks.register('fatJar', Jar) {
+    group = 'build'
+    description = 'Собирает jar со всеми зависимостями внутри'
+    // Фиксированное имя без версии, чтобы команды запуска не приходилось править.
+    archiveFileName = 'J1-all.jar'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'org.example.Main'
+    }
+    from sourceSets.main.output
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    // Подписи чужих jar-файлов в объединённом архиве недействительны, их нужно убрать.
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.EC'
+}
+
+tasks.named('build') {
+    dependsOn 'fatJar'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+}

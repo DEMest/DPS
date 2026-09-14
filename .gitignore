@@ -1,0 +1,47 @@
+### Gradle ###
+.gradle/
+build/
+# Локальный Gradle home (обход не-ASCII пути домашнего каталога пользователя)
+.gradle-home/
+.tmp/
+
+### IntelliJ IDEA ###
+# Настройки IDE не хранятся: IDEA сама пересоздаёт их при открытии,
+# независимо от того, открыт весь репозиторий или отдельная папка задачи.
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+### VS Code ###
+.vscode/
+
+### Eclipse ###
+.classpath
+.project
+.settings/
+bin/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Личные заметки к защите — не для репозитория ###
+DEMO.md
+
+### Ключи и сертификаты, созданные при запуске ###
+demo/
+*.key
+*.crt
+
+### Служебные файлы ИИ-ассистентов (в любой подпапке) ###
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.claude/
+
+### Собранные jar-файлы ###
+# Обёртка Gradle — исключение: без неё проект не собрать после клонирования.
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
