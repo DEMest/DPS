@@ -1,0 +1,73 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Разбор JSON-ответов сервера.
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Нужен JDK 21: «паук» построен на виртуальных нитях. Если Gradle запущен на более старой JVM,
+// сборка упадёт с понятным сообщением о ненайденном toolchain, а не собранный jar — с
+// UnsupportedClassVersionError.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+
+application {
+    mainClass = 'org.example.Main'
+}
+
+// Jackson кладётся внутрь jar, поэтому он самодостаточен:
+//   java -jar build/libs/J3.jar
+// Имя фиксированное, без версии, чтобы команды запуска не приходилось править.
+jar {
+    archiveFileName = 'J3.jar'
+    manifest {
+        attributes 'Main-Class': 'org.example.Main'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    // Описания модулей и подписи чужих jar-файлов в объединённом архиве не нужны.
+    exclude 'module-info.class', 'META-INF/versions/*/module-info.class',
+            'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.EC'
+}
+
+test {
+    useJUnitPlatform()
+    // Проверка на выданном сервере (ServerJarTest) включается только явно, она идёт ~2 минуты:
+    //   ./gradlew test -PserverJar=Task_J3-server.jar
+    def serverJar = findProperty('serverJar')
+    if (serverJar) {
+        systemProperty 'serverJar', file(serverJar).absolutePath
+        systemProperty 'studentId', findProperty('studentId') ?: 'IvanIvanov'
+        // Без этого Gradle посчитает тест актуальным и не станет запускать его повторно.
+        outputs.upToDateWhen { false }
+    }
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat = 'full'
+        showStandardStreams = serverJar != null
+    }
+}
