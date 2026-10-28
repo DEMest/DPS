@@ -1,0 +1,58 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // У программы зависимостей нет, JUnit нужен только тестам.
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// JDK 21, как и в J1. Если Gradle запущен на более старой JVM, сборка упадёт с понятным
+// сообщением о ненайденном toolchain, а не собранный jar — с UnsupportedClassVersionError.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+
+application {
+    mainClass = 'org.example.Main'
+}
+
+// Зависимостей нет, поэтому обычный jar уже самодостаточен:
+//   java -jar build/libs/J2.jar
+// Имя фиксированное, без версии, чтобы команды запуска не приходилось править.
+jar {
+    archiveFileName = 'J2.jar'
+    manifest {
+        attributes 'Main-Class': 'org.example.Main'
+    }
+}
+
+// gradlew run должен передавать программе ввод с клавиатуры.
+tasks.named('run', JavaExec) {
+    standardInput = System.in
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+}
