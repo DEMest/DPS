@@ -5,6 +5,16 @@ build/
 .gradle-home/
 .tmp/
 
+### Leiningen / Clojure ###
+target/
+.lein-*
+.nrepl-port
+.cpcache/
+.clj-kondo/.cache/
+.lsp/
+.calva/
+.portal/
+
 ### IntelliJ IDEA ###
 # Настройки IDE не хранятся: IDEA сама пересоздаёт их при открытии,
 # независимо от того, открыт весь репозиторий или отдельная папка задачи.
